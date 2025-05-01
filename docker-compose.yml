@@ -1,7 +1,7 @@
 version: '3'
 services:
   web:
-    image: enricay/:latest
+    image: enricay/waya-stack:latest
     ports:
       - "3000:3000"
     restart: always

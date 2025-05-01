@@ -2,12 +2,12 @@ pipeline {
     agent any
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
-        DOCKER_IMAGE = "<your-dockerhub-username>/simple-web-app"
+        DOCKER_IMAGE = "enricay/waya-stack"
     }
     stages {
         stage('Clone Repository') {
             steps {
-                git credentialsId: 'github', url: 'https://github.com/<your-username>/simple-web-app.git', branch: 'main'
+                git credentialsId: 'github', url: 'https://github.com/enricay/waya-stack.git', branch: 'main'
             }
         }
         stage('Build Docker Image') {
