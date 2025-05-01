@@ -58,7 +58,6 @@ pipeline {
                         '''
                         // Apply Kubernetes manifest
                         sh '''
-                            // kubectl apply -f k8s-deployment.yml
                             kubectl get ns
                         '''
                     }
