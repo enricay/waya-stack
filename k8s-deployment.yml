@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: waya-stack
+  labels:
+    app: waya-stack
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: waya-stack
+  template:
+    metadata:
+      labels:
+        app: waya-stack
+    spec:
+      containers:
+      - name: waya-stack
+        image: enricay/waya-stack:latest
+        ports:
+        - containerPort: 3000
+
+
