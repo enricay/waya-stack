@@ -8,7 +8,7 @@ pipeline {
         OCTOPUS_SERVER = 'https://waya.octopus.app'  // Replace with your Octopus server URL
         OCTOPUS_PROJECT = 'waya-stack'  // Replace with your Octopus project name
         OCTOPUS_ENVIRONMENT = 'Development'  // Replace with the environment you want to deploy to
-        OCTOPUS_RELEASE_VERSION = 0.0.1  // Set the release version
+        OCTOPUS_RELEASE_VERSION = "0.0.1"  // Set the release version
     }
     stages {
         stage('Clone Repository') {
