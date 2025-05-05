@@ -6,7 +6,7 @@ pipeline {
         OCTOPUS_SERVER = 'https://waya.octopus.app'  // Replace with your Octopus server URL
         OCTOPUS_PROJECT = 'waya-stack'  // Replace with your Octopus project name
         OCTOPUS_ENVIRONMENT = 'Development'  // Replace with the environment you want to deploy to
-        OCTOPUS_RELEASE_VERSION = '1.0.${env.BUILD_NUMBER}'  // Set the release version
+        OCTOPUS_RELEASE_VERSION = "0.0.1"  // Set the release version
     }
     stages {
         stage('Clone Repository') {
@@ -36,9 +36,9 @@ pipeline {
                 script {
                     // Use withCredentials to securely access Octopus API key
                     withCredentials([string(credentialsId: 'octopus-api-key', variable: 'OCTOPUS_API_KEY')]) {
-                        // Fetch the ReleaseId from Octopus based on the release version
+                        // Fetch the ReleaseId from Octopus based on the release version for a specific project
                         def releaseResponse = sh(script: """
-                            curl -X GET ${OCTOPUS_SERVER}/api/releases/all \
+                            curl -X GET ${OCTOPUS_SERVER}/api/projects/${OCTOPUS_PROJECT}/releases \
                                 -H "X-Octopus-ApiKey: \$OCTOPUS_API_KEY" \
                                 -H "Content-Type: application/json"
                         """, returnStdout: true).trim()
