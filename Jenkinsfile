@@ -3,10 +3,11 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         DOCKER_IMAGE = "enricay/waya-stack"
-        OCTOPUS_SERVER = 'https://waya.octopus.app'  // Replace with your Octopus server URL
-        OCTOPUS_PROJECT = 'waya-stack'  // Replace with your Octopus project name
-        OCTOPUS_ENVIRONMENT = 'Development'  // Replace with the environment you want to deploy to
-        OCTOPUS_RELEASE_VERSION = "0.0.1"  // Set the release version
+        OCTOPUS_SERVER = 'https://waya.octopus.app'  // Octopus server URL
+        OCTOPUS_PROJECT = 'waya-stack'  // Octopus project name
+        OCTOPUS_ENVIRONMENT = 'Development'  // Environment to deploy to
+        OCTOPUS_RELEASE_VERSION = "0.0.1"  // Release version from Octopus
+        OCTOPUS_API_KEY = credentials('octopus-api-key') // Octopus API key from Jenkins credentials
     }
     stages {
         stage('Clone Repository') {
@@ -34,32 +35,29 @@ pipeline {
         stage('Get ReleaseId from Octopus') {
             steps {
                 script {
-                    // Use withCredentials to securely access Octopus API key
-                    withCredentials([string(credentialsId: 'octopus-api-key', variable: 'OCTOPUS_API_KEY')]) {
-                        // Fetch the ReleaseId from Octopus based on the release version for a specific project
-                        def releaseResponse = sh(script: """
-                            curl -X GET ${OCTOPUS_SERVER}/api/projects/${OCTOPUS_PROJECT}/releases \
-                                -H "X-Octopus-ApiKey: \$OCTOPUS_API_KEY" \
-                                -H "Content-Type: application/json"
+                    // Fetch the release information from Octopus using the Octopus API
+                    def releaseResponse = sh(script: """
+                        curl -X GET ${OCTOPUS_SERVER}/api/Spaces-1/projects/Projects-1/releases \
+                            -H "X-Octopus-ApiKey: \$OCTOPUS_API_KEY" \
+                            -H "Content-Type: application/json"
+                    """, returnStdout: true).trim()
+
+                    // Debugging step: print the response to check
+                    echo "Response from Octopus: ${releaseResponse}"
+
+                    // Parse the response to get the ReleaseId based on the release version
+                    def releaseId = ''
+                    if (releaseResponse != '') {
+                        releaseId = sh(script: """
+                            echo '${releaseResponse}' | jq -r '.Items[] | select(.Version == "${OCTOPUS_RELEASE_VERSION}") | .Id'
                         """, returnStdout: true).trim()
+                    }
 
-                        // Debugging step: print the response to check
-                        echo "Response from Octopus: ${releaseResponse}"
-
-                        // Parse the response if not empty
-                        def releaseId = ''
-                        if (releaseResponse != '') {
-                            releaseId = sh(script: """
-                                echo '${releaseResponse}' | jq -r '.Items[] | select(.Version == "${OCTOPUS_RELEASE_VERSION}") | .Id'
-                            """, returnStdout: true).trim()
-                        }
-
-                        // Store the ReleaseId in an environment variable
-                        if (releaseId) {
-                            env.OCTOPUS_RELEASE_ID = releaseId
-                        } else {
-                            error "Release version ${OCTOPUS_RELEASE_VERSION} not found in Octopus"
-                        }
+                    // Check if releaseId was found
+                    if (releaseId) {
+                        env.OCTOPUS_RELEASE_ID = releaseId
+                    } else {
+                        error "Release version ${OCTOPUS_RELEASE_VERSION} not found in Octopus"
                     }
                 }
             }
@@ -67,9 +65,9 @@ pipeline {
         stage('Trigger Octopus Deploy') {
             steps {
                 script {
-                    // Trigger the Octopus deployment using the ReleaseId
+                    // Trigger the deployment to Octopus using the ReleaseId and environment
                     sh '''
-                    curl -X POST ${OCTOPUS_SERVER}/api/deployments \
+                    curl -X POST ${OCTOPUS_SERVER}/api/Spaces-1/deployments \
                         -H "X-Octopus-ApiKey: ${OCTOPUS_API_KEY}" \
                         -H "Content-Type: application/json" \
                         -d '{
