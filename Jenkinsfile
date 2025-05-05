@@ -32,10 +32,26 @@ pipeline {
                 }
             }
         }
+        stage('Get ReleaseId from Octopus') {
+            steps {
+                script {
+                    // Fetch ReleaseId from Octopus using the ReleaseVersion
+                    def releaseResponse = sh(script: """
+                    curl -X GET ${OCTOPUS_SERVER}/api/releases/all \
+                        -H "X-Octopus-ApiKey: ${OCTOPUS_API_KEY}" \
+                        -H "Content-Type: application/json" \
+                        | jq -r '.Items[] | select(.Version == "${OCTOPUS_RELEASE_VERSION}") | .Id'
+                    """, returnStdout: true).trim()
+
+                    // Set the ReleaseId for use in deployment
+                    env.OCTOPUS_RELEASE_ID = releaseResponse
+                }
+            }
+        }
         stage('Trigger Octopus Deploy') {
             steps {
                 script {
-                    // Trigger Octopus Deployment
+                    // Trigger Octopus Deployment using ReleaseId
                     sh '''
                     curl -X POST ${OCTOPUS_SERVER}/api/deployments \
                         -H "X-Octopus-ApiKey: ${OCTOPUS_API_KEY}" \
@@ -43,7 +59,7 @@ pipeline {
                         -d '{
                             "ProjectId": "${OCTOPUS_PROJECT}",
                             "EnvironmentId": "${OCTOPUS_ENVIRONMENT}",
-                            "ReleaseVersion": "${OCTOPUS_RELEASE_VERSION}"
+                            "ReleaseId": "${OCTOPUS_RELEASE_ID}"
                         }'
                     '''
                 }
