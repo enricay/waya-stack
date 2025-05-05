@@ -3,7 +3,6 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub')
         DOCKER_IMAGE = "enricay/waya-stack"
-        AWS_CREDENTIALS = credentials('aws-eks-credentials')
         OCTOPUS_API_KEY = credentials('octopus-api-key')  // Store your Octopus API key in Jenkins Credentials
         OCTOPUS_SERVER = 'https://waya.octopus.app'  // Replace with your Octopus server URL
         OCTOPUS_PROJECT = 'waya-stack'  // Replace with your Octopus project name
