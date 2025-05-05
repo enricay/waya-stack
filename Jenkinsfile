@@ -6,7 +6,7 @@ pipeline {
         OCTOPUS_SERVER = 'https://waya.octopus.app'  // Replace with your Octopus server URL
         OCTOPUS_PROJECT = 'waya-stack'  // Replace with your Octopus project name
         OCTOPUS_ENVIRONMENT = 'Development'  // Replace with the environment you want to deploy to
-        OCTOPUS_RELEASE_VERSION = "0.0.1"  // Set the release version
+        OCTOPUS_RELEASE_VERSION = '1.0.${env.BUILD_NUMBER}'  // Set the release version
     }
     stages {
         stage('Clone Repository') {
@@ -40,12 +40,26 @@ pipeline {
                         def releaseResponse = sh(script: """
                             curl -X GET ${OCTOPUS_SERVER}/api/releases/all \
                                 -H "X-Octopus-ApiKey: \$OCTOPUS_API_KEY" \
-                                -H "Content-Type: application/json" \
-                                | jq -r '.Items[] | select(.Version == "${OCTOPUS_RELEASE_VERSION}") | .Id'
+                                -H "Content-Type: application/json"
                         """, returnStdout: true).trim()
 
+                        // Debugging step: print the response to check
+                        echo "Response from Octopus: ${releaseResponse}"
+
+                        // Parse the response if not empty
+                        def releaseId = ''
+                        if (releaseResponse != '') {
+                            releaseId = sh(script: """
+                                echo '${releaseResponse}' | jq -r '.Items[] | select(.Version == "${OCTOPUS_RELEASE_VERSION}") | .Id'
+                            """, returnStdout: true).trim()
+                        }
+
                         // Store the ReleaseId in an environment variable
-                        env.OCTOPUS_RELEASE_ID = releaseResponse
+                        if (releaseId) {
+                            env.OCTOPUS_RELEASE_ID = releaseId
+                        } else {
+                            error "Release version ${OCTOPUS_RELEASE_VERSION} not found in Octopus"
+                        }
                     }
                 }
             }
